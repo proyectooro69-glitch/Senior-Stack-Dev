@@ -10,6 +10,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { InventoryPage } from "@/pages/Inventory";
 import { POSPage } from "@/pages/POS";
 import { ReportsPage } from "@/pages/Reports";
+import caimanLogo from "@assets/caiman_1766446614725.png";
 import {
   openDB,
   getProducts,
@@ -40,18 +41,15 @@ function App() {
   const [categories, setCategoriesState] = useState<Category[]>([]);
   const [sales, setSalesState] = useState<Sale[]>([]);
 
-  // Load data - tries server first, falls back to IndexedDB
   const loadData = useCallback(async () => {
     try {
       await openDB();
       
-      // Try to fetch from server if online
       if (getOnlineStatus()) {
         setSyncStatus('syncing');
         const serverData = await fetchFromServer();
         
         if (serverData) {
-          // Store server data in IndexedDB for offline access
           await Promise.all([
             setProducts(serverData.products),
             setCategories(serverData.categories),
@@ -63,16 +61,13 @@ function App() {
           setSalesState(serverData.sales);
           setSyncStatus('online');
         } else {
-          // Fallback to local data if server fetch failed
           await loadLocalData();
         }
       } else {
-        // Offline - load from IndexedDB
         await loadLocalData();
       }
     } catch (error) {
       console.error("Failed to load data:", error);
-      // Try local data as final fallback
       await loadLocalData();
     } finally {
       setIsLoading(false);
@@ -93,12 +88,10 @@ function App() {
     setSalesState(loadedSales);
   };
 
-  // Initialize app
   useEffect(() => {
     initSyncService();
     setSyncStatusCallback((status) => {
       setSyncStatus(status);
-      // Reload data when coming back online
       if (status === 'online') {
         loadData();
       }
@@ -106,13 +99,11 @@ function App() {
     loadData();
   }, [loadData]);
 
-  // Handle adding product
   const handleAddProduct = async (productData: InsertProduct) => {
     try {
       const newProduct = await addProduct(productData);
       setProductsState((prev) => [...prev, newProduct]);
       
-      // Try to sync immediately if online
       if (getOnlineStatus()) {
         triggerSync();
       }
@@ -121,7 +112,6 @@ function App() {
     }
   };
 
-  // Handle updating product
   const handleUpdateProduct = async (product: Product) => {
     try {
       const updated = await updateProduct(product);
@@ -129,7 +119,6 @@ function App() {
         prev.map((p) => (p.id === updated.id ? updated : p))
       );
       
-      // Try to sync immediately if online
       if (getOnlineStatus()) {
         triggerSync();
       }
@@ -138,13 +127,11 @@ function App() {
     }
   };
 
-  // Handle sale
   const handleSale = async (saleData: InsertSale) => {
     try {
       const newSale = await addSale(saleData);
       setSalesState((prev) => [...prev, newSale]);
       
-      // Update product quantity locally
       if (saleData.productId) {
         setProductsState((prev) =>
           prev.map((p) =>
@@ -155,7 +142,6 @@ function App() {
         );
       }
       
-      // Try to sync immediately if online
       if (getOnlineStatus()) {
         triggerSync();
       }
@@ -187,13 +173,21 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="flex min-h-screen flex-col bg-background">
-          {/* Header with sync status */}
-          <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-4">
-            <span className="text-lg font-semibold text-foreground">VentaFácil</span>
+          <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-4">
+            <div className="flex items-center gap-2">
+              <img 
+                src={caimanLogo} 
+                alt="Caimán" 
+                className="h-8 w-8 object-contain"
+              />
+              <div className="flex flex-col leading-none">
+                <span className="text-xs text-muted-foreground">Solución Digital</span>
+                <span className="text-sm font-semibold text-foreground">CAIMÁN</span>
+              </div>
+            </div>
             <SyncStatus status={syncStatus} />
           </header>
 
-          {/* Main content */}
           <main className="flex-1 overflow-hidden">
             <Switch>
               <Route path="/">
@@ -217,7 +211,6 @@ function App() {
             </Switch>
           </main>
 
-          {/* Bottom navigation */}
           <BottomNavigation />
         </div>
         <Toaster />

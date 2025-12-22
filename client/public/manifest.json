@@ -1,10 +1,10 @@
 {
-  "name": "VentaFácil - Inventario y Ventas",
-  "short_name": "VentaFácil",
+  "name": "Solución Digital Caimán - Inventario y Ventas",
+  "short_name": "Caimán",
   "description": "Tu inventario siempre disponible. App de inventario y ventas offline-first para pequeños comercios.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#064e3b",
   "theme_color": "#10B981",
   "orientation": "portrait-primary",
   "icons": [
