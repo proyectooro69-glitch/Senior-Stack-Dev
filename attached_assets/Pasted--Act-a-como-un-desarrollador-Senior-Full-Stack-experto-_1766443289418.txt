@@ -1,0 +1,30 @@
+ "Actúa como un desarrollador Senior Full Stack experto en PWA (Progressive Web Apps). Necesito crear una aplicación de Inventario y Ventas diseñada para pequeños comercios que sufren cortes de internet frecuentes (Modo Offline prioritario).
+> **REQUISITOS FUNCIONALES:**
+> 1. **Gestión de Inventario:** Poder añadir productos con nombre, precio, cantidad inicial y una categoría.
+> 2. **Punto de Venta (POS):** Una interfaz rápida para seleccionar productos y registrar una venta.
+> 3. **Reporte Diario:** Un resumen que muestre el total de ventas del día y la cantidad vendida por tipo de producto.
+> 4. **MODO OFFLINE (Crítico):** La app debe usar **LocalStorage** o **IndexedDB** para guardar los datos localmente si no hay conexión. Debe incluir la lógica para sincronizar los datos automáticamente cuando detecte que el internet ha regresado.
+> 
+> 
+> **REQUISITOS VISUALES:**
+> 1. **Estilo:** Interfaz moderna, limpia y minimalista (estilo Apple o Stripe). Usa una paleta de colores profesional (blancos, grises suaves y un color de acento como azul eléctrico o verde esmeralda).
+> 2. **Presentación:** Incluye una pantalla de bienvenida (Splash Screen) con una imagen o ilustración sencilla y moderna que represente crecimiento o comercio.
+> 3. **Componentes:** Usa tarjetas (cards) para los productos y botones grandes fáciles de tocar en móviles.
+> 
+> 
+> **REQUISITOS TÉCNICOS:**
+> 1. Código en HTML, CSS y JavaScript puro (o React) para que sea fácil de subir a Replit/Netlify.
+> 2. Incluye el archivo `manifest.json` y el código del `service-worker.js` para que la app sea instalable y funcione sin conexión.
+> 3. Todo el código debe estar en un formato que pueda copiar y pegar directamente."
+> 
+> 
+
+---
+
+### Lo que te aporto desde mi "biblioteca" de conocimientos:
+
+Para que esta app sea realmente útil en Cuba, asegúrate de que la IA incluya estas 3 cosas (que he añadido en el prompt):
+
+1. **Sincronización Silenciosa:** Le pedí que use un evento llamado `window.addEventListener('online', ...)`. Esto hace que, en cuanto el teléfono del vendedor capte un poquito de señal, la app envíe los datos "por debajo" sin interrumpir al vendedor.
+2. **IndexedDB en lugar de LocalStorage:** Si el inventario es muy grande (más de 100 productos), el LocalStorage se puede llenar. IndexedDB es como una mini base de datos profesional que vive dentro del móvil.
+3. **Diseño "Thumb-Friendly":** En las tiendas se trabaja rápido. El diseño debe tener los botones de "Vender" al alcance del pulgar, para que no tengan que usar las dos manos.
