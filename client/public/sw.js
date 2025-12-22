@@ -1,58 +1,106 @@
-const CACHE_NAME = 'ventafacil-v1';
-const urlsToCache = [
+const CACHE_NAME = 'ventafacil-v2';
+const STATIC_CACHE = 'ventafacil-static-v2';
+
+const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/favicon.png'
 ];
 
-// Install event - cache essential files
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing Service Worker...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    caches.open(STATIC_CACHE)
       .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        console.log('[SW] Caching static assets');
+        return cache.addAll(STATIC_ASSETS);
+      })
+      .then(() => {
+        console.log('[SW] Static assets cached successfully');
+        return self.skipWaiting();
       })
       .catch((err) => {
-        console.log('Cache install failed:', err);
+        console.error('[SW] Cache install failed:', err);
       })
   );
-  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating Service Worker...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE) {
+            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+      console.log('[SW] Service Worker activated');
+      return self.clients.claim();
     })
   );
-  self.clients.claim();
 });
 
-// Fetch event - network first, fall back to cache
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
+  const url = new URL(event.request.url);
+  
   if (event.request.method !== 'GET') {
     return;
   }
 
-  // Skip API calls - they should be handled by IndexedDB
-  if (event.request.url.includes('/api/')) {
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  const isAsset = url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/);
+  const isNavigation = event.request.mode === 'navigate';
+
+  if (isAsset) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.match(event.request).then((cachedResponse) => {
+          const fetchPromise = fetch(event.request).then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              cache.put(event.request, networkResponse.clone());
+            }
+            return networkResponse;
+          }).catch(() => {
+            return cachedResponse;
+          });
+          
+          return cachedResponse || fetchPromise;
+        });
+      })
+    );
+    return;
+  }
+
+  if (isNavigation) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(STATIC_CACHE).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match('/') || caches.match('/index.html');
+        })
+    );
     return;
   }
 
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Clone the response before caching
         if (response && response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -62,21 +110,11 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Fallback to cache
-        return caches.match(event.request).then((response) => {
-          if (response) {
-            return response;
-          }
-          // Return the cached index.html for navigation requests
-          if (event.request.mode === 'navigate') {
-            return caches.match('/');
-          }
-        });
+        return caches.match(event.request);
       })
   );
 });
 
-// Listen for messages from the main thread
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
