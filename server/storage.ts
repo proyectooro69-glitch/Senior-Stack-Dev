@@ -101,7 +101,7 @@ export class SupabaseStorage implements IStorage {
     const { data, error } = await supabase
       .from('inventario')
       .select('*')
-      .order('name');
+      .order('nombre');
 
     if (error) {
       console.error('Error fetching products from Supabase:', error);
@@ -109,11 +109,11 @@ export class SupabaseStorage implements IStorage {
     }
 
     return (data || []).map(row => ({
-      id: row.id,
-      name: row.name,
-      price: row.price,
-      quantity: row.quantity,
-      categoryId: row.category_id || null,
+      id: String(row.id),
+      name: row.nombre,
+      price: row.precio,
+      quantity: row.cantidad,
+      categoryId: row.categoria_id || null,
       localId: row.local_id || null,
       synced: 1,
     }));
@@ -131,27 +131,24 @@ export class SupabaseStorage implements IStorage {
     }
 
     return {
-      id: data.id,
-      name: data.name,
-      price: data.price,
-      quantity: data.quantity,
-      categoryId: data.category_id || null,
+      id: String(data.id),
+      name: data.nombre,
+      price: data.precio,
+      quantity: data.cantidad,
+      categoryId: data.categoria_id || null,
       localId: data.local_id || null,
       synced: 1,
     };
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const id = randomUUID();
-    
     const { data, error } = await supabase
       .from('inventario')
       .insert({
-        id,
-        name: insertProduct.name,
-        price: insertProduct.price,
-        quantity: insertProduct.quantity,
-        category_id: insertProduct.categoryId || null,
+        nombre: insertProduct.name,
+        precio: insertProduct.price,
+        cantidad: insertProduct.quantity,
+        categoria_id: insertProduct.categoryId || null,
         local_id: insertProduct.localId || null,
       })
       .select()
@@ -163,11 +160,11 @@ export class SupabaseStorage implements IStorage {
     }
 
     return {
-      id: data.id,
-      name: data.name,
-      price: data.price,
-      quantity: data.quantity,
-      categoryId: data.category_id || null,
+      id: String(data.id),
+      name: data.nombre,
+      price: data.precio,
+      quantity: data.cantidad,
+      categoryId: data.categoria_id || null,
       localId: data.local_id || null,
       synced: 1,
     };
@@ -176,10 +173,10 @@ export class SupabaseStorage implements IStorage {
   async updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product | undefined> {
     const updateData: Record<string, unknown> = {};
     
-    if (updates.name !== undefined) updateData.name = updates.name;
-    if (updates.price !== undefined) updateData.price = updates.price;
-    if (updates.quantity !== undefined) updateData.quantity = updates.quantity;
-    if (updates.categoryId !== undefined) updateData.category_id = updates.categoryId;
+    if (updates.name !== undefined) updateData.nombre = updates.name;
+    if (updates.price !== undefined) updateData.precio = updates.price;
+    if (updates.quantity !== undefined) updateData.cantidad = updates.quantity;
+    if (updates.categoryId !== undefined) updateData.categoria_id = updates.categoryId;
 
     const { data, error } = await supabase
       .from('inventario')
@@ -194,11 +191,11 @@ export class SupabaseStorage implements IStorage {
     }
 
     return {
-      id: data.id,
-      name: data.name,
-      price: data.price,
-      quantity: data.quantity,
-      categoryId: data.category_id || null,
+      id: String(data.id),
+      name: data.nombre,
+      price: data.precio,
+      quantity: data.cantidad,
+      categoryId: data.categoria_id || null,
       localId: data.local_id || null,
       synced: 1,
     };
