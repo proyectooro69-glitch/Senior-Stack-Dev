@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -223,35 +224,37 @@ export function AddProductDialog({
               )}
             />
 
-            <DialogFooter className="flex gap-3 pt-4 sm:flex-row">
-              <button
-                type="button"
-                className="flex-1 h-12 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  form.reset({
-                    name: "",
-                    price: 0,
-                    quantity: 1,
-                    categoryId: undefined,
-                  });
-                  onOpenChange(false);
-                }}
-                data-testid="cancel-product"
-              >
-                Cancelar
-              </button>
-              <Button
-                type="submit"
-                className="flex-1 h-12"
-                data-testid="save-product"
-              >
-                {editProduct ? "Guardar cambios" : "Agregar"}
-              </Button>
-            </DialogFooter>
-          </form>
+            </form>
         </Form>
+        
+        <DialogFooter className="flex gap-3 pt-4 sm:flex-row">
+          <DialogClose asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 h-12"
+              onClick={() => {
+                form.reset({
+                  name: "",
+                  price: 0,
+                  quantity: 1,
+                  categoryId: undefined,
+                });
+              }}
+              data-testid="cancel-product"
+            >
+              Cancelar
+            </Button>
+          </DialogClose>
+          <Button
+            type="button"
+            className="flex-1 h-12"
+            onClick={form.handleSubmit(handleSubmit)}
+            data-testid="save-product"
+          >
+            {editProduct ? "Guardar cambios" : "Agregar"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
