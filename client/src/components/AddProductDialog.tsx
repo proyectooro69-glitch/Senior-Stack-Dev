@@ -224,11 +224,12 @@ export function AddProductDialog({
             />
 
             <DialogFooter className="flex gap-3 pt-4 sm:flex-row">
-              <Button
+              <button
                 type="button"
-                variant="outline"
-                className="flex-1 h-12"
-                onClick={() => {
+                className="flex-1 h-12 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   form.reset({
                     name: "",
                     price: 0,
@@ -240,7 +241,7 @@ export function AddProductDialog({
                 data-testid="cancel-product"
               >
                 Cancelar
-              </Button>
+              </button>
               <Button
                 type="submit"
                 className="flex-1 h-12"
