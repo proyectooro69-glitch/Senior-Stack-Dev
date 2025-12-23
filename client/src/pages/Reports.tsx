@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, TrendingUp, Package, DollarSign, ChevronLeft, ChevronRight, User } from "lucide-react";
+import { Calendar, TrendingUp, Package, DollarSign, ChevronLeft, ChevronRight, User, Printer } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +67,81 @@ export function ReportsPage({ sales, userEmail }: ReportsPageProps) {
 
   const isToday = dateString === format(new Date(), "yyyy-MM-dd");
 
+  const handlePrintReport = () => {
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Cierre de Caja - ${format(selectedDate, "d 'de' MMMM yyyy", { locale: es })}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
+          h1 { text-align: center; font-size: 18px; margin-bottom: 5px; }
+          .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
+          .info { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 5px 0; border-bottom: 1px dashed #ccc; }
+          .label { color: #666; }
+          .value { font-weight: bold; }
+          .total { font-size: 24px; text-align: center; margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 8px; }
+          .items { margin-top: 20px; }
+          .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+          .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #999; }
+          @media print { body { padding: 10px; } }
+        </style>
+      </head>
+      <body>
+        <h1>CIERRE DE CAJA</h1>
+        <div class="subtitle">${format(selectedDate, "EEEE, d 'de' MMMM yyyy", { locale: es })}</div>
+        
+        <div class="info">
+          <span class="label">Vendedor:</span>
+          <span class="value">${userEmail || 'N/A'}</span>
+        </div>
+        
+        <div class="total">
+          <div style="color: #666; font-size: 14px;">TOTAL VENDIDO</div>
+          <div style="font-size: 32px; font-weight: bold; color: #10B981;">$${reportData.totalSales.toFixed(2)}</div>
+        </div>
+        
+        <div class="info">
+          <span class="label">Transacciones:</span>
+          <span class="value">${reportData.transactionCount}</span>
+        </div>
+        <div class="info">
+          <span class="label">Productos vendidos:</span>
+          <span class="value">${reportData.totalItems}</span>
+        </div>
+        <div class="info">
+          <span class="label">Promedio por venta:</span>
+          <span class="value">$${reportData.averageTransaction.toFixed(2)}</span>
+        </div>
+        
+        ${reportData.items.length > 0 ? `
+          <div class="items">
+            <h3 style="font-size: 14px; margin-bottom: 10px;">Detalle por Producto:</h3>
+            ${reportData.items.map(item => `
+              <div class="item">
+                <span>${item.productName} (x${item.quantitySold})</span>
+                <span>$${item.revenue.toFixed(2)}</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+        
+        <div class="footer">
+          Generado el ${format(new Date(), "d/MM/yyyy 'a las' HH:mm", { locale: es })}
+          <br/>Caiman-POS
+        </div>
+      </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -120,6 +195,17 @@ export function ReportsPage({ sales, userEmail }: ReportsPageProps) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
+        {/* Print button */}
+        <Button
+          onClick={handlePrintReport}
+          className="w-full mb-6"
+          size="lg"
+          data-testid="button-print-report"
+        >
+          <Printer className="mr-2 h-5 w-5" />
+          Cierre de Caja Diario
+        </Button>
+
         {/* Summary cards */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <Card data-testid="total-sales-card">
