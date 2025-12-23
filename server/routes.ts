@@ -3,13 +3,14 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertProductSchema, insertCategorySchema, insertSaleSchema } from "@shared/schema";
 import { z } from "zod";
+import { authMiddleware, AuthenticatedRequest } from "./auth";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   
-  // Categories endpoints
+  // Categories endpoints (no auth required, shared across users)
   app.get("/api/categories", async (req, res) => {
     try {
       const categories = await storage.getCategories();
@@ -66,20 +67,20 @@ export async function registerRoutes(
     }
   });
 
-  // Products endpoints
-  app.get("/api/products", async (req, res) => {
+  // Products endpoints (auth required, filtered by user)
+  app.get("/api/products", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
-      const products = await storage.getProducts();
+      const products = await storage.getProducts(req.userId);
       res.json(products);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch products" });
     }
   });
 
-  app.get("/api/products/:id", async (req, res) => {
+  app.get("/api/products/:id", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       const { id } = req.params;
-      const product = await storage.getProduct(id);
+      const product = await storage.getProduct(id, req.userId);
       
       if (!product) {
         res.status(404).json({ error: "Product not found" });
@@ -92,10 +93,10 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/products", async (req, res) => {
+  app.post("/api/products", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       const validatedData = insertProductSchema.parse(req.body);
-      const product = await storage.createProduct(validatedData);
+      const product = await storage.createProduct(validatedData, req.userId);
       res.status(201).json(product);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -106,11 +107,11 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/products/:id", async (req, res) => {
+  app.patch("/api/products/:id", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
-      const product = await storage.updateProduct(id, updates);
+      const product = await storage.updateProduct(id, updates, req.userId);
       
       if (!product) {
         res.status(404).json({ error: "Product not found" });
@@ -123,10 +124,10 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/products/:id", async (req, res) => {
+  app.delete("/api/products/:id", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       const { id } = req.params;
-      const deleted = await storage.deleteProduct(id);
+      const deleted = await storage.deleteProduct(id, req.userId);
       
       if (!deleted) {
         res.status(404).json({ error: "Product not found" });
@@ -139,16 +140,16 @@ export async function registerRoutes(
     }
   });
 
-  // Sales endpoints
-  app.get("/api/sales", async (req, res) => {
+  // Sales endpoints (auth required, filtered by user)
+  app.get("/api/sales", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       const { date } = req.query;
       
       if (date && typeof date === 'string') {
-        const sales = await storage.getSalesByDate(date);
+        const sales = await storage.getSalesByDate(date, req.userId);
         res.json(sales);
       } else {
-        const sales = await storage.getSales();
+        const sales = await storage.getSales(req.userId);
         res.json(sales);
       }
     } catch (error) {
@@ -156,10 +157,10 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/sales", async (req, res) => {
+  app.post("/api/sales", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       const validatedData = insertSaleSchema.parse(req.body);
-      const sale = await storage.createSale(validatedData);
+      const sale = await storage.createSale(validatedData, req.userId);
       res.status(201).json(sale);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -170,8 +171,8 @@ export async function registerRoutes(
     }
   });
 
-  // Sync endpoint - for bulk operations when coming back online
-  app.post("/api/sync", async (req, res) => {
+  // Sync endpoint - for bulk operations when coming back online (auth required)
+  app.post("/api/sync", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       const { products, sales } = req.body;
       const results = { products: [], sales: [] } as any;
@@ -181,13 +182,13 @@ export async function registerRoutes(
         for (const product of products) {
           try {
             if (product.action === 'add') {
-              const created = await storage.createProduct(product.data);
+              const created = await storage.createProduct(product.data, req.userId);
               results.products.push({ localId: product.data.localId, serverId: created.id, status: 'synced' });
             } else if (product.action === 'update') {
-              await storage.updateProduct(product.data.id, product.data);
+              await storage.updateProduct(product.data.id, product.data, req.userId);
               results.products.push({ id: product.data.id, status: 'synced' });
             } else if (product.action === 'delete') {
-              await storage.deleteProduct(product.data.id);
+              await storage.deleteProduct(product.data.id, req.userId);
               results.products.push({ id: product.data.id, status: 'deleted' });
             }
           } catch (err) {
@@ -200,7 +201,7 @@ export async function registerRoutes(
       if (sales && Array.isArray(sales)) {
         for (const sale of sales) {
           try {
-            const created = await storage.createSale(sale.data);
+            const created = await storage.createSale(sale.data, req.userId);
             results.sales.push({ localId: sale.data.localId, serverId: created.id, status: 'synced' });
           } catch (err) {
             results.sales.push({ localId: sale.data?.localId, status: 'error' });

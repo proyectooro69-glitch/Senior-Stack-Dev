@@ -14,6 +14,11 @@ type SyncStatusCallback = (status: SyncStatus) => void;
 let isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 let syncStatusCallback: SyncStatusCallback | null = null;
 let syncInProgress = false;
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
 
 export function setSyncStatusCallback(callback: SyncStatusCallback) {
   syncStatusCallback = callback;
@@ -24,15 +29,24 @@ export function getOnlineStatus(): boolean {
   return isOnline;
 }
 
+function getAuthHeaders(): HeadersInit {
+  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+  return headers;
+}
+
 // Fetch data from server
 export async function fetchFromServer(): Promise<{ products: Product[]; categories: Category[]; sales: Sale[] } | null> {
-  if (!isOnline) return null;
+  if (!isOnline || !authToken) return null;
   
   try {
+    const headers = getAuthHeaders();
     const [productsRes, categoriesRes, salesRes] = await Promise.all([
-      fetch('/api/products'),
-      fetch('/api/categories'),
-      fetch('/api/sales'),
+      fetch('/api/products', { headers }),
+      fetch('/api/categories', { headers }),
+      fetch('/api/sales', { headers }),
     ]);
     
     if (!productsRes.ok || !categoriesRes.ok || !salesRes.ok) {
@@ -110,7 +124,7 @@ export async function syncToServer(): Promise<boolean> {
         if (endpoint) {
           const options: RequestInit = {
             method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
           };
           
           if (body && method !== 'DELETE') {

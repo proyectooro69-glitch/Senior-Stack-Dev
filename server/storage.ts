@@ -13,15 +13,15 @@ export interface IStorage {
   updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: string): Promise<boolean>;
   
-  getProducts(): Promise<Product[]>;
-  getProduct(id: string): Promise<Product | undefined>;
-  createProduct(product: InsertProduct): Promise<Product>;
-  updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
-  deleteProduct(id: string): Promise<boolean>;
+  getProducts(userId?: string): Promise<Product[]>;
+  getProduct(id: string, userId?: string): Promise<Product | undefined>;
+  createProduct(product: InsertProduct, userId?: string): Promise<Product>;
+  updateProduct(id: string, product: Partial<InsertProduct>, userId?: string): Promise<Product | undefined>;
+  deleteProduct(id: string, userId?: string): Promise<boolean>;
   
-  getSales(): Promise<Sale[]>;
-  getSalesByDate(date: string): Promise<Sale[]>;
-  createSale(sale: InsertSale): Promise<Sale>;
+  getSales(userId?: string): Promise<Sale[]>;
+  getSalesByDate(date: string, userId?: string): Promise<Sale[]>;
+  createSale(sale: InsertSale, userId?: string): Promise<Sale>;
 }
 
 export class SupabaseStorage implements IStorage {
@@ -97,11 +97,17 @@ export class SupabaseStorage implements IStorage {
     return this.categories.delete(id);
   }
 
-  async getProducts(): Promise<Product[]> {
-    const { data, error } = await supabase
+  async getProducts(userId?: string): Promise<Product[]> {
+    let query = supabase
       .from('inventario')
       .select('*')
       .order('nombre');
+    
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching products from Supabase:', error);
@@ -116,15 +122,21 @@ export class SupabaseStorage implements IStorage {
       categoryId: row.categoria_id || null,
       localId: row.local_id || null,
       synced: 1,
+      userId: row.user_id || null,
     }));
   }
 
-  async getProduct(id: string): Promise<Product | undefined> {
-    const { data, error } = await supabase
+  async getProduct(id: string, userId?: string): Promise<Product | undefined> {
+    let query = supabase
       .from('inventario')
       .select('*')
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+    
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error || !data) {
       return undefined;
@@ -138,10 +150,11 @@ export class SupabaseStorage implements IStorage {
       categoryId: data.categoria_id || null,
       localId: data.local_id || null,
       synced: 1,
+      userId: data.user_id || null,
     };
   }
 
-  async createProduct(insertProduct: InsertProduct): Promise<Product> {
+  async createProduct(insertProduct: InsertProduct, userId?: string): Promise<Product> {
     const { data, error } = await supabase
       .from('inventario')
       .insert({
@@ -150,6 +163,7 @@ export class SupabaseStorage implements IStorage {
         cantidad: insertProduct.quantity,
         categoria_id: insertProduct.categoryId || null,
         local_id: insertProduct.localId || null,
+        user_id: userId || (insertProduct as any).userId || null,
       })
       .select()
       .single();
@@ -167,10 +181,11 @@ export class SupabaseStorage implements IStorage {
       categoryId: data.categoria_id || null,
       localId: data.local_id || null,
       synced: 1,
+      userId: data.user_id || null,
     };
   }
 
-  async updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product | undefined> {
+  async updateProduct(id: string, updates: Partial<InsertProduct>, userId?: string): Promise<Product | undefined> {
     const updateData: Record<string, unknown> = {};
     
     if (updates.name !== undefined) updateData.nombre = updates.name;
@@ -178,12 +193,16 @@ export class SupabaseStorage implements IStorage {
     if (updates.quantity !== undefined) updateData.cantidad = updates.quantity;
     if (updates.categoryId !== undefined) updateData.categoria_id = updates.categoryId;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('inventario')
       .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+      .eq('id', id);
+    
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query.select().single();
 
     if (error || !data) {
       console.error('Error updating product in Supabase:', error);
@@ -198,14 +217,21 @@ export class SupabaseStorage implements IStorage {
       categoryId: data.categoria_id || null,
       localId: data.local_id || null,
       synced: 1,
+      userId: data.user_id || null,
     };
   }
 
-  async deleteProduct(id: string): Promise<boolean> {
-    const { error } = await supabase
+  async deleteProduct(id: string, userId?: string): Promise<boolean> {
+    let query = supabase
       .from('inventario')
       .delete()
       .eq('id', id);
+    
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { error } = await query;
 
     if (error) {
       console.error('Error deleting product from Supabase:', error);
@@ -215,11 +241,17 @@ export class SupabaseStorage implements IStorage {
     return true;
   }
 
-  async getSales(): Promise<Sale[]> {
-    const { data, error } = await supabase
+  async getSales(userId?: string): Promise<Sale[]> {
+    let query = supabase
       .from('ventas')
       .select('*')
       .order('date', { ascending: false });
+    
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching sales from Supabase:', error);
@@ -236,15 +268,22 @@ export class SupabaseStorage implements IStorage {
       date: row.date,
       localId: row.local_id || null,
       synced: 1,
+      userId: row.user_id || null,
     }));
   }
 
-  async getSalesByDate(date: string): Promise<Sale[]> {
-    const { data, error } = await supabase
+  async getSalesByDate(date: string, userId?: string): Promise<Sale[]> {
+    let query = supabase
       .from('ventas')
       .select('*')
       .eq('date', date)
       .order('id');
+    
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching sales by date from Supabase:', error);
@@ -261,10 +300,11 @@ export class SupabaseStorage implements IStorage {
       date: row.date,
       localId: row.local_id || null,
       synced: 1,
+      userId: row.user_id || null,
     }));
   }
 
-  async createSale(insertSale: InsertSale): Promise<Sale> {
+  async createSale(insertSale: InsertSale, userId?: string): Promise<Sale> {
     const id = randomUUID();
     
     const { data, error } = await supabase
@@ -278,6 +318,7 @@ export class SupabaseStorage implements IStorage {
         total: insertSale.total,
         date: insertSale.date,
         local_id: insertSale.localId || null,
+        user_id: userId || (insertSale as any).userId || null,
       })
       .select()
       .single();
@@ -288,11 +329,11 @@ export class SupabaseStorage implements IStorage {
     }
 
     if (insertSale.productId) {
-      const product = await this.getProduct(insertSale.productId);
+      const product = await this.getProduct(insertSale.productId, userId);
       if (product) {
         await this.updateProduct(insertSale.productId, {
           quantity: Math.max(0, product.quantity - insertSale.quantity),
-        });
+        }, userId);
       }
     }
 
@@ -306,6 +347,7 @@ export class SupabaseStorage implements IStorage {
       date: data.date,
       localId: data.local_id || null,
       synced: 1,
+      userId: data.user_id || null,
     };
   }
 }

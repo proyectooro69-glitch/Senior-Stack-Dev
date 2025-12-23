@@ -23,6 +23,7 @@ export const products = pgTable("products", {
   categoryId: varchar("category_id").references(() => categories.id),
   localId: varchar("local_id"), // For offline sync
   synced: integer("synced").notNull().default(1),
+  userId: varchar("user_id"), // Owner of the product
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({ id: true, synced: true });
@@ -40,6 +41,7 @@ export const sales = pgTable("sales", {
   date: text("date").notNull(), // ISO date string for easy filtering
   localId: varchar("local_id"), // For offline sync
   synced: integer("synced").notNull().default(1),
+  userId: varchar("user_id"), // Owner of the sale
 });
 
 export const insertSaleSchema = createInsertSchema(sales).omit({ id: true, synced: true });

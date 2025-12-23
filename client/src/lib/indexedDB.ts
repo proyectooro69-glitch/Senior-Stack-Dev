@@ -78,8 +78,9 @@ export async function getCategories(): Promise<Category[]> {
 export async function addCategory(category: InsertCategory): Promise<Category> {
   const database = await openDB();
   const newCategory: Category = {
-    ...category,
     id: generateLocalId(),
+    name: category.name,
+    color: category.color || '#10B981',
   };
 
   return new Promise((resolve, reject) => {
@@ -161,11 +162,14 @@ export async function addProduct(product: InsertProduct): Promise<Product> {
   const database = await openDB();
   const localId = generateLocalId();
   const newProduct: Product = {
-    ...product,
     id: localId,
+    name: product.name,
+    price: product.price,
+    quantity: product.quantity ?? 0,
+    categoryId: product.categoryId || null,
     localId: localId,
     synced: 0,
-    categoryId: product.categoryId || null,
+    userId: (product as any).userId || null,
   };
 
   return new Promise((resolve, reject) => {
@@ -259,11 +263,16 @@ export async function addSale(sale: InsertSale): Promise<Sale> {
   const database = await openDB();
   const localId = generateLocalId();
   const newSale: Sale = {
-    ...sale,
     id: localId,
+    productId: sale.productId || null,
+    productName: sale.productName,
+    quantity: sale.quantity,
+    unitPrice: sale.unitPrice,
+    total: sale.total,
+    date: sale.date,
     localId: localId,
     synced: 0,
-    productId: sale.productId || null,
+    userId: (sale as any).userId || null,
   };
 
   return new Promise((resolve, reject) => {
@@ -370,4 +379,20 @@ export async function initializeDefaultData(): Promise<void> {
       await addCategory(cat);
     }
   }
+}
+
+// Clear all data (used when logging out)
+export async function clearAllData(): Promise<void> {
+  const database = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(['products', 'sales', 'categories', 'pendingSync'], 'readwrite');
+    
+    transaction.objectStore('products').clear();
+    transaction.objectStore('sales').clear();
+    transaction.objectStore('categories').clear();
+    transaction.objectStore('pendingSync').clear();
+    
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
 }
