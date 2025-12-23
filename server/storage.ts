@@ -1,49 +1,40 @@
 import { type User, type InsertUser, type Product, type InsertProduct, type Category, type InsertCategory, type Sale, type InsertSale } from "@shared/schema";
+import { supabase } from "./supabase";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
-  // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
-  // Categories
   getCategories(): Promise<Category[]>;
   getCategory(id: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: string): Promise<boolean>;
   
-  // Products
   getProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<boolean>;
   
-  // Sales
   getSales(): Promise<Sale[]>;
   getSalesByDate(date: string): Promise<Sale[]>;
   createSale(sale: InsertSale): Promise<Sale>;
 }
 
-export class MemStorage implements IStorage {
+export class SupabaseStorage implements IStorage {
   private users: Map<string, User>;
   private categories: Map<string, Category>;
-  private products: Map<string, Product>;
-  private sales: Map<string, Sale>;
 
   constructor() {
     this.users = new Map();
     this.categories = new Map();
-    this.products = new Map();
-    this.sales = new Map();
-    
-    // Initialize with default categories
     this.initializeDefaultCategories();
   }
 
-  private initializeDefaultCategories() {
+  private async initializeDefaultCategories() {
     const defaultCategories = [
       { name: 'Bebidas', color: '#3B82F6' },
       { name: 'Alimentos', color: '#10B981' },
@@ -51,13 +42,12 @@ export class MemStorage implements IStorage {
       { name: 'Otros', color: '#6B7280' },
     ];
 
-    defaultCategories.forEach((cat) => {
+    for (const cat of defaultCategories) {
       const id = randomUUID();
       this.categories.set(id, { ...cat, id });
-    });
+    }
   }
 
-  // Users
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
@@ -75,7 +65,6 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  // Categories
   async getCategories(): Promise<Category[]> {
     return Array.from(this.categories.values());
   }
@@ -86,7 +75,11 @@ export class MemStorage implements IStorage {
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
     const id = randomUUID();
-    const category: Category = { ...insertCategory, id };
+    const category: Category = { 
+      id,
+      name: insertCategory.name,
+      color: insertCategory.color || '#10B981',
+    };
     this.categories.set(id, category);
     return category;
   }
@@ -104,74 +97,220 @@ export class MemStorage implements IStorage {
     return this.categories.delete(id);
   }
 
-  // Products
   async getProducts(): Promise<Product[]> {
-    return Array.from(this.products.values());
+    const { data, error } = await supabase
+      .from('inventario')
+      .select('*')
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching products from Supabase:', error);
+      return [];
+    }
+
+    return (data || []).map(row => ({
+      id: row.id,
+      name: row.name,
+      price: row.price,
+      quantity: row.quantity,
+      categoryId: row.category_id || null,
+      localId: row.local_id || null,
+      synced: 1,
+    }));
   }
 
   async getProduct(id: string): Promise<Product | undefined> {
-    return this.products.get(id);
+    const { data, error } = await supabase
+      .from('inventario')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      return undefined;
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      price: data.price,
+      quantity: data.quantity,
+      categoryId: data.category_id || null,
+      localId: data.local_id || null,
+      synced: 1,
+    };
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
     const id = randomUUID();
-    const product: Product = { 
-      ...insertProduct, 
-      id,
+    
+    const { data, error } = await supabase
+      .from('inventario')
+      .insert({
+        id,
+        name: insertProduct.name,
+        price: insertProduct.price,
+        quantity: insertProduct.quantity,
+        category_id: insertProduct.categoryId || null,
+        local_id: insertProduct.localId || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating product in Supabase:', error);
+      throw new Error('Failed to create product');
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      price: data.price,
+      quantity: data.quantity,
+      categoryId: data.category_id || null,
+      localId: data.local_id || null,
       synced: 1,
-      localId: insertProduct.localId || null,
-      categoryId: insertProduct.categoryId || null,
     };
-    this.products.set(id, product);
-    return product;
   }
 
   async updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product | undefined> {
-    const existing = this.products.get(id);
-    if (!existing) return undefined;
+    const updateData: Record<string, unknown> = {};
     
-    const updated = { ...existing, ...updates, synced: 1 };
-    this.products.set(id, updated);
-    return updated;
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.price !== undefined) updateData.price = updates.price;
+    if (updates.quantity !== undefined) updateData.quantity = updates.quantity;
+    if (updates.categoryId !== undefined) updateData.category_id = updates.categoryId;
+
+    const { data, error } = await supabase
+      .from('inventario')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error || !data) {
+      console.error('Error updating product in Supabase:', error);
+      return undefined;
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      price: data.price,
+      quantity: data.quantity,
+      categoryId: data.category_id || null,
+      localId: data.local_id || null,
+      synced: 1,
+    };
   }
 
   async deleteProduct(id: string): Promise<boolean> {
-    return this.products.delete(id);
+    const { error } = await supabase
+      .from('inventario')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting product from Supabase:', error);
+      return false;
+    }
+
+    return true;
   }
 
-  // Sales
   async getSales(): Promise<Sale[]> {
-    return Array.from(this.sales.values());
+    const { data, error } = await supabase
+      .from('ventas')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching sales from Supabase:', error);
+      return [];
+    }
+
+    return (data || []).map(row => ({
+      id: row.id,
+      productId: row.product_id || null,
+      productName: row.product_name,
+      quantity: row.quantity,
+      unitPrice: row.unit_price,
+      total: row.total,
+      date: row.date,
+      localId: row.local_id || null,
+      synced: 1,
+    }));
   }
 
   async getSalesByDate(date: string): Promise<Sale[]> {
-    return Array.from(this.sales.values()).filter(
-      (sale) => sale.date === date
-    );
+    const { data, error } = await supabase
+      .from('ventas')
+      .select('*')
+      .eq('date', date)
+      .order('id');
+
+    if (error) {
+      console.error('Error fetching sales by date from Supabase:', error);
+      return [];
+    }
+
+    return (data || []).map(row => ({
+      id: row.id,
+      productId: row.product_id || null,
+      productName: row.product_name,
+      quantity: row.quantity,
+      unitPrice: row.unit_price,
+      total: row.total,
+      date: row.date,
+      localId: row.local_id || null,
+      synced: 1,
+    }));
   }
 
   async createSale(insertSale: InsertSale): Promise<Sale> {
     const id = randomUUID();
-    const sale: Sale = { 
-      ...insertSale, 
-      id,
-      synced: 1,
-      localId: insertSale.localId || null,
-      productId: insertSale.productId || null,
-    };
-    this.sales.set(id, sale);
     
-    // Update product quantity
+    const { data, error } = await supabase
+      .from('ventas')
+      .insert({
+        id,
+        product_id: insertSale.productId || null,
+        product_name: insertSale.productName,
+        quantity: insertSale.quantity,
+        unit_price: insertSale.unitPrice,
+        total: insertSale.total,
+        date: insertSale.date,
+        local_id: insertSale.localId || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating sale in Supabase:', error);
+      throw new Error('Failed to create sale');
+    }
+
     if (insertSale.productId) {
-      const product = this.products.get(insertSale.productId);
+      const product = await this.getProduct(insertSale.productId);
       if (product) {
-        product.quantity = Math.max(0, product.quantity - insertSale.quantity);
-        this.products.set(insertSale.productId, product);
+        await this.updateProduct(insertSale.productId, {
+          quantity: Math.max(0, product.quantity - insertSale.quantity),
+        });
       }
     }
-    
-    return sale;
+
+    return {
+      id: data.id,
+      productId: data.product_id || null,
+      productName: data.product_name,
+      quantity: data.quantity,
+      unitPrice: data.unit_price,
+      total: data.total,
+      date: data.date,
+      localId: data.local_id || null,
+      synced: 1,
+    };
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new SupabaseStorage();
