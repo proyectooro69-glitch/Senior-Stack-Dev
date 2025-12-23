@@ -226,12 +226,14 @@ export function AddProductDialog({
             </form>
         </Form>
         
-        <DialogFooter className="flex gap-3 pt-4 sm:flex-row">
+        <DialogFooter className="flex gap-3 pt-4 sm:flex-row relative z-50">
           <Button
             type="button"
             variant="outline"
-            className="flex-1 h-12"
-            onClick={() => {
+            className="flex-1 h-12 pointer-events-auto"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              console.log("Cancel button clicked");
               form.reset({
                 name: "",
                 price: 0,

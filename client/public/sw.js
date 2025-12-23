@@ -1,5 +1,5 @@
-const CACHE_NAME = 'ventafacil-v7';
-const STATIC_CACHE = 'ventafacil-static-v7';
+const CACHE_NAME = 'ventafacil-v8';
+const STATIC_CACHE = 'ventafacil-static-v8';
 
 const STATIC_ASSETS = [
   '/',
