@@ -227,7 +227,15 @@ export function AddProductDialog({
                 type="button"
                 variant="outline"
                 className="flex-1 h-12"
-                onClick={() => onOpenChange(false)}
+                onClick={() => {
+                  form.reset({
+                    name: "",
+                    price: 0,
+                    quantity: 1,
+                    categoryId: undefined,
+                  });
+                  onOpenChange(false);
+                }}
                 data-testid="cancel-product"
               >
                 Cancelar
