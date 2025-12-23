@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -226,26 +225,19 @@ export function AddProductDialog({
             </form>
         </Form>
         
-        <DialogFooter className="flex gap-3 pt-4 sm:flex-row relative z-50">
-          <Button
+        <div className="flex gap-3 pt-4">
+          <button
             type="button"
-            variant="outline"
-            className="flex-1 h-12 pointer-events-auto"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              console.log("Cancel button clicked");
-              form.reset({
-                name: "",
-                price: 0,
-                quantity: 1,
-                categoryId: undefined,
-              });
+            className="flex-1 h-12 rounded-md border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
+            onClick={() => {
+              console.log("Native cancel clicked");
+              form.reset();
               onOpenChange(false);
             }}
             data-testid="cancel-product"
           >
             Cancelar
-          </Button>
+          </button>
           <Button
             type="button"
             className="flex-1 h-12"
@@ -254,7 +246,7 @@ export function AddProductDialog({
           >
             {editProduct ? "Guardar cambios" : "Agregar"}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

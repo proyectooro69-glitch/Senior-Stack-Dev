@@ -6,20 +6,8 @@ import { createServer } from "http";
 const app = express();
 const httpServer = createServer(app);
 
-// CSP middleware to allow Supabase connections
-app.use((_req, res, next) => {
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'self'; " +
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-    "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data: blob: https:; " +
-    "font-src 'self' data:; " +
-    "frame-src 'self'"
-  );
-  next();
-});
+// CSP middleware - disabled for development to avoid conflicts
+// In production, configure appropriate CSP headers
 
 declare module "http" {
   interface IncomingMessage {
