@@ -254,7 +254,7 @@ function AuthenticatedApp() {
             />
           </Route>
           <Route path="/reports">
-            <ReportsPage sales={sales} />
+            <ReportsPage sales={sales} userEmail={user?.email} />
           </Route>
         </Switch>
       </main>

@@ -1,16 +1,18 @@
 import { useMemo, useState } from "react";
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, TrendingUp, Package, DollarSign, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, TrendingUp, Package, DollarSign, ChevronLeft, ChevronRight, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type { Sale, DailyReportItem } from "@shared/schema";
 
 interface ReportsPageProps {
   sales: Sale[];
+  userEmail?: string;
 }
 
-export function ReportsPage({ sales }: ReportsPageProps) {
+export function ReportsPage({ sales, userEmail }: ReportsPageProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const dateString = format(selectedDate, "yyyy-MM-dd");
@@ -69,9 +71,19 @@ export function ReportsPage({ sales }: ReportsPageProps) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border px-4 py-4">
-        <h1 className="text-2xl font-bold text-foreground mb-4">
-          Reporte Diario
-        </h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-foreground">
+            Cierre de Caja
+          </h1>
+          {userEmail && (
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground" data-testid="text-seller-email">
+                {userEmail}
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Date picker */}
         <div className="flex items-center justify-between">
