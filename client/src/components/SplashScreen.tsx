@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import caimanLogo from "@assets/caiman_1766446614725.png";
+import caimanLogo from "@assets/Caiman_Post_1766508805306.png";
 
 interface SplashScreenProps {
   onComplete: () => void;
