@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO } from "date-fns";
+import { useMemo } from "react";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, TrendingUp, Package, DollarSign, ChevronLeft, ChevronRight, User, Printer } from "lucide-react";
+import { Calendar, TrendingUp, Package, DollarSign, User, Printer } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +13,8 @@ interface ReportsPageProps {
 }
 
 export function ReportsPage({ sales, userEmail }: ReportsPageProps) {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-
-  const dateString = format(selectedDate, "yyyy-MM-dd");
+  const today = new Date();
+  const dateString = format(today, "yyyy-MM-dd");
 
   const todaysSales = useMemo(() => {
     return sales.filter((sale) => sale.date === dateString);
@@ -57,22 +56,12 @@ export function ReportsPage({ sales, userEmail }: ReportsPageProps) {
     };
   }, [todaysSales, dateString]);
 
-  const navigateDate = (days: number) => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() + days);
-    if (newDate <= new Date()) {
-      setSelectedDate(newDate);
-    }
-  };
-
-  const isToday = dateString === format(new Date(), "yyyy-MM-dd");
-
   const handlePrintReport = () => {
     const printContent = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Cierre de Caja - ${format(selectedDate, "d 'de' MMMM yyyy", { locale: es })}</title>
+        <title>Cierre de Caja - ${format(today, "d 'de' MMMM yyyy", { locale: es })}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
           h1 { text-align: center; font-size: 18px; margin-bottom: 5px; }
@@ -89,7 +78,7 @@ export function ReportsPage({ sales, userEmail }: ReportsPageProps) {
       </head>
       <body>
         <h1>CIERRE DE CAJA</h1>
-        <div class="subtitle">${format(selectedDate, "EEEE, d 'de' MMMM yyyy", { locale: es })}</div>
+        <div class="subtitle">${format(today, "EEEE, d 'de' MMMM yyyy", { locale: es })}</div>
         
         <div class="info">
           <span class="label">Vendedor:</span>
@@ -146,50 +135,22 @@ export function ReportsPage({ sales, userEmail }: ReportsPageProps) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border px-4 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-foreground">
-            Cierre de Caja
-          </h1>
-          {userEmail && (
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground" data-testid="text-seller-email">
-                {userEmail}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Date picker */}
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigateDate(-1)}
-            data-testid="prev-day"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              <span className="font-medium text-foreground">
-                {format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
-              </span>
-            </div>
-            {isToday && (
-              <span className="text-xs text-primary font-medium">Hoy</span>
-            )}
+        <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="text-report-title">
+          Ventas de hoy
+        </h1>
+        {userEmail && (
+          <div className="flex items-center gap-2 mb-3">
+            <User className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-foreground" data-testid="text-seller-email">
+              {userEmail}
+            </span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigateDate(1)}
-            disabled={isToday}
-            data-testid="next-day"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </Button>
+        )}
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Calendar className="h-4 w-4" />
+          <span className="text-sm">
+            {format(new Date(), "EEEE, d 'de' MMMM yyyy", { locale: es })}
+          </span>
         </div>
       </div>
 
