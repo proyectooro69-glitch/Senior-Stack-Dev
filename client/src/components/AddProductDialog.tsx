@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -85,6 +84,16 @@ export function AddProductDialog({
     onSave(data);
     onOpenChange(false);
     form.reset();
+  };
+
+  const handleCancel = () => {
+    form.reset({
+      name: "",
+      price: 0,
+      quantity: 1,
+      categoryId: undefined,
+    });
+    onOpenChange(false);
   };
 
   const quantity = form.watch("quantity");
@@ -223,35 +232,28 @@ export function AddProductDialog({
               )}
             />
 
-            <div className="flex gap-3 pt-4">
-              <DialogClose asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1 h-12"
-                  onClick={() => {
-                    form.reset({
-                      name: "",
-                      price: 0,
-                      quantity: 1,
-                      categoryId: undefined,
-                    });
-                  }}
-                  data-testid="cancel-product"
-                >
-                  Cancelar
-                </Button>
-              </DialogClose>
-              <Button
-                type="submit"
-                className="flex-1 h-12"
-                data-testid="save-product"
-              >
-                {editProduct ? "Guardar cambios" : "Agregar"}
-              </Button>
-            </div>
-          </form>
+            </form>
         </Form>
+
+        <div className="flex gap-3 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 h-12"
+            onClick={handleCancel}
+            data-testid="cancel-product"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            className="flex-1 h-12"
+            onClick={form.handleSubmit(handleSubmit)}
+            data-testid="save-product"
+          >
+            {editProduct ? "Guardar cambios" : "Agregar"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
