@@ -163,7 +163,7 @@ export class SupabaseStorage implements IStorage {
         cantidad: insertProduct.quantity,
         categoria_id: insertProduct.categoryId || null,
         local_id: insertProduct.localId || null,
-        user_id: userId || (insertProduct as any).userId || null,
+        user_id: userId || null,
       })
       .select()
       .single();
@@ -318,7 +318,7 @@ export class SupabaseStorage implements IStorage {
         total: insertSale.total,
         date: insertSale.date,
         local_id: insertSale.localId || null,
-        user_id: userId || (insertSale as any).userId || null,
+        user_id: userId || null,
       })
       .select()
       .single();
