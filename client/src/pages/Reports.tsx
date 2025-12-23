@@ -83,13 +83,16 @@ export function ReportsPage({ sales }: ReportsPageProps) {
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            <span className="font-medium text-foreground">
-              {isToday
-                ? "Hoy"
-                : format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
-            </span>
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              <span className="font-medium text-foreground">
+                {format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
+              </span>
+            </div>
+            {isToday && (
+              <span className="text-xs text-primary font-medium">Hoy</span>
+            )}
           </div>
           <Button
             variant="ghost"
