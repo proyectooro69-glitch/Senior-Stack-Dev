@@ -125,6 +125,7 @@ export async function syncToServer(): Promise<boolean> {
           } else if (response.ok) {
             results.success++;
           } else {
+            console.error(`Sync failed for ${item.type}:`, await response.text());
             results.failed++;
           }
         }
@@ -134,12 +135,10 @@ export async function syncToServer(): Promise<boolean> {
       }
     }
 
-    // Clear pending items only if we processed some successfully
-    if (results.success > 0) {
-      await clearPendingSync();
-    }
+    // Clear all pending items after processing (even if some failed, to prevent infinite retry loop)
+    await clearPendingSync();
     
-    syncStatusCallback?.('online');
+    syncStatusCallback?.(isOnline ? 'online' : 'offline');
     return results.failed === 0;
   } catch (error) {
     console.error('Sync failed:', error);
