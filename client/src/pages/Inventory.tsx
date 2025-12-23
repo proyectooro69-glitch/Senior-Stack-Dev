@@ -12,6 +12,7 @@ interface InventoryPageProps {
   categories: Category[];
   onAddProduct: (product: InsertProduct) => void;
   onUpdateProduct: (product: Product) => void;
+  onDeleteProduct: (product: Product) => void;
 }
 
 export function InventoryPage({
@@ -19,6 +20,7 @@ export function InventoryPage({
   categories,
   onAddProduct,
   onUpdateProduct,
+  onDeleteProduct,
 }: InventoryPageProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
@@ -141,6 +143,7 @@ export function InventoryPage({
                 product={product}
                 category={getCategoryById(product.categoryId)}
                 onEdit={handleEdit}
+                onDelete={onDeleteProduct}
               />
             ))}
           </div>

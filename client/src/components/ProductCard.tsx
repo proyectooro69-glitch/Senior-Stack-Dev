@@ -1,4 +1,4 @@
-import { Package, Minus, Plus, Edit2 } from "lucide-react";
+import { Package, Minus, Plus, Edit2, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ interface ProductCardProps {
   product: Product;
   category?: Category;
   onEdit?: (product: Product) => void;
+  onDelete?: (product: Product) => void;
   onAddToCart?: (product: Product) => void;
   showQuantityControls?: boolean;
   cartQuantity?: number;
@@ -18,6 +19,7 @@ export function ProductCard({
   product,
   category,
   onEdit,
+  onDelete,
   onAddToCart,
   showQuantityControls = false,
   cartQuantity = 0,
@@ -45,17 +47,30 @@ export function ProductCard({
             <h3 className="font-semibold text-foreground truncate" data-testid={`product-name-${product.id}`}>
               {product.name}
             </h3>
-            {onEdit && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 flex-shrink-0"
-                onClick={() => onEdit(product)}
-                data-testid={`edit-product-${product.id}`}
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-            )}
+            <div className="flex gap-1 flex-shrink-0">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => onEdit(product)}
+                  data-testid={`edit-product-${product.id}`}
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-destructive hover:text-destructive"
+                  onClick={() => onDelete(product)}
+                  data-testid={`delete-product-${product.id}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
 
           {category && (

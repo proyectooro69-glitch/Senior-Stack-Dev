@@ -18,6 +18,7 @@ import {
   getSales,
   addProduct,
   updateProduct,
+  deleteProduct,
   addSale,
   initializeDefaultData,
   setProducts,
@@ -127,6 +128,19 @@ function App() {
     }
   };
 
+  const handleDeleteProduct = async (product: Product) => {
+    try {
+      await deleteProduct(product.id);
+      setProductsState((prev) => prev.filter((p) => p.id !== product.id));
+      
+      if (getOnlineStatus()) {
+        triggerSync();
+      }
+    } catch (error) {
+      console.error("Failed to delete product:", error);
+    }
+  };
+
   const handleSale = async (saleData: InsertSale) => {
     try {
       const newSale = await addSale(saleData);
@@ -196,6 +210,7 @@ function App() {
                   categories={categories}
                   onAddProduct={handleAddProduct}
                   onUpdateProduct={handleUpdateProduct}
+                  onDeleteProduct={handleDeleteProduct}
                 />
               </Route>
               <Route path="/pos">
