@@ -1,7 +1,7 @@
-# VentaFácil - Offline-First PWA for Inventory & Sales
+# Caiman-POS - Offline-First PWA for Inventory & Sales
 
 ## Overview
-VentaFácil is a Progressive Web App (PWA) designed for small businesses that need to manage inventory and sales, especially in areas with unreliable internet connectivity. The app prioritizes offline functionality using IndexedDB for local storage and automatically syncs data when connectivity is restored.
+Caiman-POS is a Progressive Web App (PWA) designed for small businesses that need to manage inventory and sales, especially in areas with unreliable internet connectivity. The app prioritizes offline functionality using IndexedDB for local storage and automatically syncs data when connectivity is restored.
 
 ## Current State
 - **Status**: MVP Complete

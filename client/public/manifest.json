@@ -1,6 +1,6 @@
 {
-  "name": "Solución Digital Caimán - Inventario y Ventas",
-  "short_name": "Caimán",
+  "name": "Caiman-POS - Inventario y Ventas",
+  "short_name": "Caiman-POS",
   "description": "Tu inventario siempre disponible. App de inventario y ventas offline-first para pequeños comercios.",
   "start_url": "/",
   "display": "standalone",
