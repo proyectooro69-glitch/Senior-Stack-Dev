@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -228,24 +227,23 @@ export function AddProductDialog({
         </Form>
         
         <DialogFooter className="flex gap-3 pt-4 sm:flex-row">
-          <DialogClose asChild>
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1 h-12"
-              onClick={() => {
-                form.reset({
-                  name: "",
-                  price: 0,
-                  quantity: 1,
-                  categoryId: undefined,
-                });
-              }}
-              data-testid="cancel-product"
-            >
-              Cancelar
-            </Button>
-          </DialogClose>
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 h-12"
+            onClick={() => {
+              form.reset({
+                name: "",
+                price: 0,
+                quantity: 1,
+                categoryId: undefined,
+              });
+              onOpenChange(false);
+            }}
+            data-testid="cancel-product"
+          >
+            Cancelar
+          </Button>
           <Button
             type="button"
             className="flex-1 h-12"
