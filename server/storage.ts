@@ -98,14 +98,10 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getProducts(userId?: string): Promise<Product[]> {
-    let query = supabase
+    const query = supabase
       .from('inventario')
       .select('*')
       .order('nombre');
-    
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
 
     const { data, error } = await query;
 
@@ -122,19 +118,15 @@ export class SupabaseStorage implements IStorage {
       categoryId: row.categoria_id || null,
       localId: row.local_id || null,
       synced: 1,
-      userId: row.user_id || null,
+      userId: null,
     }));
   }
 
   async getProduct(id: string, userId?: string): Promise<Product | undefined> {
-    let query = supabase
+    const query = supabase
       .from('inventario')
       .select('*')
       .eq('id', id);
-    
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
 
     const { data, error } = await query.single();
 
@@ -150,7 +142,7 @@ export class SupabaseStorage implements IStorage {
       categoryId: data.categoria_id || null,
       localId: data.local_id || null,
       synced: 1,
-      userId: data.user_id || null,
+      userId: null,
     };
   }
 
@@ -163,7 +155,6 @@ export class SupabaseStorage implements IStorage {
         cantidad: insertProduct.quantity,
         categoria_id: insertProduct.categoryId || null,
         local_id: insertProduct.localId || null,
-        user_id: userId || null,
       })
       .select()
       .single();
@@ -181,7 +172,7 @@ export class SupabaseStorage implements IStorage {
       categoryId: data.categoria_id || null,
       localId: data.local_id || null,
       synced: 1,
-      userId: data.user_id || null,
+      userId: null,
     };
   }
 
@@ -193,14 +184,10 @@ export class SupabaseStorage implements IStorage {
     if (updates.quantity !== undefined) updateData.cantidad = updates.quantity;
     if (updates.categoryId !== undefined) updateData.categoria_id = updates.categoryId;
 
-    let query = supabase
+    const query = supabase
       .from('inventario')
       .update(updateData)
       .eq('id', id);
-    
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
 
     const { data, error } = await query.select().single();
 
@@ -217,19 +204,15 @@ export class SupabaseStorage implements IStorage {
       categoryId: data.categoria_id || null,
       localId: data.local_id || null,
       synced: 1,
-      userId: data.user_id || null,
+      userId: null,
     };
   }
 
   async deleteProduct(id: string, userId?: string): Promise<boolean> {
-    let query = supabase
+    const query = supabase
       .from('inventario')
       .delete()
       .eq('id', id);
-    
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
 
     const { error } = await query;
 
@@ -242,14 +225,10 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getSales(userId?: string): Promise<Sale[]> {
-    let query = supabase
+    const query = supabase
       .from('ventas')
       .select('*')
       .order('date', { ascending: false });
-    
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
 
     const { data, error } = await query;
 
@@ -268,20 +247,16 @@ export class SupabaseStorage implements IStorage {
       date: row.date,
       localId: row.local_id || null,
       synced: 1,
-      userId: row.user_id || null,
+      userId: null,
     }));
   }
 
   async getSalesByDate(date: string, userId?: string): Promise<Sale[]> {
-    let query = supabase
+    const query = supabase
       .from('ventas')
       .select('*')
       .eq('date', date)
       .order('id');
-    
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
 
     const { data, error } = await query;
 
@@ -300,7 +275,7 @@ export class SupabaseStorage implements IStorage {
       date: row.date,
       localId: row.local_id || null,
       synced: 1,
-      userId: row.user_id || null,
+      userId: null,
     }));
   }
 
@@ -318,7 +293,6 @@ export class SupabaseStorage implements IStorage {
         total: insertSale.total,
         date: insertSale.date,
         local_id: insertSale.localId || null,
-        user_id: userId || null,
       })
       .select()
       .single();
@@ -347,7 +321,7 @@ export class SupabaseStorage implements IStorage {
       date: data.date,
       localId: data.local_id || null,
       synced: 1,
-      userId: data.user_id || null,
+      userId: null,
     };
   }
 }
