@@ -26,20 +26,32 @@ export function log(message: string, source = "express") {
 const port = parseInt(process.env.PORT || "5000", 10);
 
 console.log("Starting production server...");
-console.log("PORT env:", process.env.PORT);
-console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? "set" : "not set");
 
-// Register ALL middleware and routes BEFORE starting server
+// CRITICAL: Health check endpoints registered IMMEDIATELY - no async
+let appReady = false;
+app.get("/health", (_req, res) => {
+  res.status(200).send("OK");
+});
+app.get("/__health", (_req, res) => {
+  res.status(200).json({ status: "healthy" });
+});
+// Root serves health check during startup, then passes to static files
+app.get("/", (req, res, next) => {
+  if (!appReady) {
+    res.status(200).send("<!DOCTYPE html><html><body>OK</body></html>");
+  } else {
+    next();
+  }
+});
+
+// CRITICAL: Start server IMMEDIATELY - before any async operations
+httpServer.listen(port, "0.0.0.0", () => {
+  log(`serving on port ${port}`);
+});
+
+// Now do async setup in background
 (async () => {
   try {
-    // Health check endpoints - registered first
-    app.get("/health", (_req, res) => {
-      res.status(200).send("OK");
-    });
-    app.get("/__health", (_req, res) => {
-      res.status(200).json({ status: "healthy" });
-    });
-
     // Body parsing middleware
     app.use(
       express.json({
@@ -53,7 +65,7 @@ console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? "set" : "not set");
     // Logging middleware
     app.use((req, res, next) => {
       const start = Date.now();
-      const path = req.path;
+      const reqPath = req.path;
       let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
       const originalResJson = res.json;
@@ -64,8 +76,8 @@ console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? "set" : "not set");
 
       res.on("finish", () => {
         const duration = Date.now() - start;
-        if (path.startsWith("/api")) {
-          let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+        if (reqPath.startsWith("/api")) {
+          let logLine = `${req.method} ${reqPath} ${res.statusCode} in ${duration}ms`;
           if (capturedJsonResponse) {
             logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
           }
@@ -90,20 +102,11 @@ console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? "set" : "not set");
     // Serve static files (includes fallback to index.html)
     serveStatic(app);
 
-    log("All routes and middleware registered");
-
-    // START SERVER AFTER all routes are registered
-    httpServer.listen(
-      {
-        port,
-        host: "0.0.0.0",
-      },
-      () => {
-        log(`serving on port ${port}`);
-      },
-    );
+    // Mark app as ready - "/" will now serve static files
+    appReady = true;
+    log("All routes and middleware registered - app ready");
   } catch (error) {
-    console.error("Failed to start server:", error);
+    console.error("Failed to register routes:", error);
     process.exit(1);
   }
 })();
