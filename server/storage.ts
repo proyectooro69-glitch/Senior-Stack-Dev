@@ -282,11 +282,21 @@ export class SupabaseStorage implements IStorage {
   async createSale(insertSale: InsertSale, userId?: string): Promise<Sale> {
     const id = randomUUID();
     
+    // Convert productId to number if it's a valid integer, otherwise null
+    // Supabase ventas table expects bigint for product_id
+    let productIdNum: number | null = null;
+    if (insertSale.productId) {
+      const parsed = parseInt(insertSale.productId, 10);
+      if (!isNaN(parsed)) {
+        productIdNum = parsed;
+      }
+    }
+    
     const { data, error } = await supabase
       .from('ventas')
       .insert({
         id,
-        product_id: insertSale.productId || null,
+        product_id: productIdNum,
         product_name: insertSale.productName,
         quantity: insertSale.quantity,
         unit_price: insertSale.unitPrice,
