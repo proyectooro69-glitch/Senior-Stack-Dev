@@ -67,9 +67,23 @@ app.use((req, res, next) => {
   next();
 });
 
+const port = parseInt(process.env.PORT || "5000", 10);
+
 console.log("Starting production server...");
 console.log("PORT env:", process.env.PORT);
+console.log("Binding to port:", port);
 console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? "set" : "not set");
+
+// Start listening IMMEDIATELY to pass health checks
+httpServer.listen(
+  {
+    port,
+    host: "0.0.0.0",
+  },
+  () => {
+    log(`serving on port ${port}`);
+  },
+);
 
 (async () => {
   try {
@@ -84,20 +98,10 @@ console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? "set" : "not set");
     });
 
     serveStatic(app);
-
-    const port = parseInt(process.env.PORT || "5000", 10);
-    httpServer.listen(
-      {
-        port,
-        host: "0.0.0.0",
-        reusePort: true,
-      },
-      () => {
-        log(`serving on port ${port}`);
-      },
-    );
+    
+    log("All routes registered successfully");
   } catch (error) {
-    console.error("Failed to start server:", error);
+    console.error("Failed to register routes:", error);
     process.exit(1);
   }
 })();
