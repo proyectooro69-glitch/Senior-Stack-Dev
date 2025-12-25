@@ -14,6 +14,18 @@ app.get("/__health", (_req, res) => {
   res.status(200).json({ status: "healthy" });
 });
 
+// Root path health check - responds before static files are loaded
+let staticReady = false;
+app.get("/", (req, res, next) => {
+  if (!staticReady) {
+    // During startup, respond quickly for health checks
+    res.status(200).send("OK");
+  } else {
+    // Once static is ready, pass to next handler
+    next();
+  }
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -98,6 +110,7 @@ httpServer.listen(
     });
 
     serveStatic(app);
+    staticReady = true;
     
     log("All routes registered successfully");
   } catch (error) {
