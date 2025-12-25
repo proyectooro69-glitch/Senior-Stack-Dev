@@ -6,24 +6,26 @@ import fs from "fs";
 const app = express();
 const httpServer = createServer(app);
 const port = parseInt(process.env.PORT || "5000", 10);
+const distPath = path.resolve(process.cwd(), "dist", "public");
+const indexPath = path.resolve(distPath, "index.html");
 let appReady = false;
 
-// Health checks - always respond immediately
+// Health checks - immediate
 app.get("/health", (_req, res) => res.status(200).send("OK"));
 app.get("/__health", (_req, res) => res.status(200).json({ status: "healthy" }));
 
-// Root route - health check response during startup, then pass to static files
-app.get("/", (req, res, next) => {
-  if (!appReady) {
-    res.status(200).send("<!DOCTYPE html><html><body>OK</body></html>");
+// Root - serve index.html or health check response
+app.get("/", (_req, res) => {
+  if (appReady && fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
   } else {
-    next();
+    res.status(200).send("OK");
   }
 });
 
-// Start listening IMMEDIATELY
+// Start IMMEDIATELY
 httpServer.listen(port, "0.0.0.0", () => {
-  console.log(`Server listening on port ${port}`);
+  console.log(`Listening on port ${port}`);
   setupApp();
 });
 
@@ -36,32 +38,16 @@ async function setupApp() {
     await registerRoutes(httpServer, app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      res.status(err.status || 500).json({ message: err.message || "Internal Server Error" });
+      res.status(err.status || 500).json({ message: err.message || "Error" });
     });
 
-    const distPath = path.resolve(process.cwd(), "dist", "public");
     if (fs.existsSync(distPath)) {
-      console.log(`Serving static from: ${distPath}`);
-      
-      app.use((_req, res, next) => {
-        res.setHeader(
-          "Content-Security-Policy",
-          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'self';"
-        );
-        next();
-      });
-      
       app.use(express.static(distPath));
-      app.use("*", (_req, res) => {
-        res.sendFile(path.resolve(distPath, "index.html"));
-      });
-      
+      app.use("*", (_req, res) => res.sendFile(indexPath));
       appReady = true;
-      console.log("App fully initialized and ready");
-    } else {
-      console.error("Static files not found at:", distPath);
+      console.log("Ready");
     }
-  } catch (error) {
-    console.error("Setup error:", error);
+  } catch (e) {
+    console.error("Setup error:", e);
   }
 }
