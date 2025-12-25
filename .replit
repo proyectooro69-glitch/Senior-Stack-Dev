@@ -9,7 +9,8 @@ channel = "stable-24_05"
 localPort = 5000
 externalPort = 80
 
-deploymentTarget = "autoscale"'
+[env]
+PORT = "5000"
 
 [deployment]
 deploymentTarget = "autoscale"
