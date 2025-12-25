@@ -2,6 +2,9 @@ import { type User, type InsertUser, type Product, type InsertProduct, type Cate
 import { supabase } from "./supabase";
 import { randomUUID } from "crypto";
 
+// Export supabase for use in admin routes
+export { supabase };
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;

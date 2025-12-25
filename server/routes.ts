@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertProductSchema, insertCategorySchema, insertSaleSchema } from "@shared/schema";
 import { z } from "zod";
 import { authMiddleware, AuthenticatedRequest } from "./auth";
+import { adminMiddleware, AdminRequest, inviteUser, listUsers, deleteUser, ADMIN_EMAIL } from "./admin";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -212,6 +213,70 @@ export async function registerRoutes(
       res.json(results);
     } catch (error) {
       res.status(500).json({ error: "Failed to sync data" });
+    }
+  });
+
+  // Admin endpoints - only accessible by admin email
+  app.get("/api/admin/users", adminMiddleware, async (req: AdminRequest, res) => {
+    try {
+      const users = await listUsers();
+      res.json(users);
+    } catch (error: any) {
+      console.error("Error listing users:", error);
+      res.status(500).json({ error: error.message || "Failed to list users" });
+    }
+  });
+
+  app.post("/api/admin/users", adminMiddleware, async (req: AdminRequest, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+      
+      if (password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+      
+      const user = await inviteUser(email, password);
+      res.status(201).json({ 
+        id: user.id, 
+        email: user.email,
+        message: "Usuario creado exitosamente" 
+      });
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: error.message || "Failed to create user" });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", adminMiddleware, async (req: AdminRequest, res) => {
+    try {
+      const { id } = req.params;
+      await deleteUser(id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: error.message || "Failed to delete user" });
+    }
+  });
+
+  // Check if current user is admin
+  app.get("/api/admin/check", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { supabase } = await import('./storage');
+      const { data: { user }, error } = await supabase.auth.getUser(
+        req.headers.authorization?.substring(7) || ''
+      );
+      
+      if (error || !user) {
+        return res.json({ isAdmin: false });
+      }
+      
+      res.json({ isAdmin: user.email === ADMIN_EMAIL });
+    } catch (error) {
+      res.json({ isAdmin: false });
     }
   });
 
