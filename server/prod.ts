@@ -7,12 +7,13 @@ const app = express();
 const server = createServer(app);
 const PORT = parseInt(process.env.PORT || "5000", 10);
 
-// Pre-load index.html synchronously
+// Pre-load index.html synchronously BEFORE anything else
 const dist = path.resolve(process.cwd(), "dist", "public");
 const indexPath = path.resolve(dist, "index.html");
-const indexHtml = fs.existsSync(indexPath) ? fs.readFileSync(indexPath, "utf-8") : "<!DOCTYPE html><html><body>Loading...</body></html>";
+const indexHtml = fs.existsSync(indexPath) ? fs.readFileSync(indexPath, "utf-8") : "OK";
 
-// Health checks FIRST
+// Health checks FIRST - including "/" for default health check
+app.get("/", (_, res) => res.type("html").send(indexHtml));
 app.get("/health", (_, res) => res.status(200).send("OK"));
 app.get("/__health", (_, res) => res.status(200).json({ status: "ok" }));
 
@@ -29,7 +30,7 @@ if (fs.existsSync(dist)) {
 import { registerRoutes } from "./routes";
 registerRoutes(server, app);
 
-// SPA routes
+// SPA fallback for non-root paths
 app.get("*", (_, res) => {
   res.type("html").send(indexHtml);
 });
