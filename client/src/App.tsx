@@ -11,9 +11,11 @@ import { InventoryPage } from "@/pages/Inventory";
 import { POSPage } from "@/pages/POS";
 import { ReportsPage } from "@/pages/Reports";
 import { LoginPage } from "@/pages/Login";
+import { AdminPage } from "@/pages/Admin";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
+import { Link } from "wouter";
 import caimanLogo from "@assets/Caiman_Post_1766508805306.png";
 import {
   openDB,
@@ -223,6 +225,16 @@ function AuthenticatedApp() {
         </div>
         <div className="flex items-center gap-2">
           <SyncStatus status={syncStatus} />
+          <Link href="/admin">
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Administración"
+              data-testid="button-admin"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             size="icon"
@@ -255,6 +267,9 @@ function AuthenticatedApp() {
           </Route>
           <Route path="/reports">
             <ReportsPage sales={sales} userEmail={user?.email} />
+          </Route>
+          <Route path="/admin">
+            <AdminPage />
           </Route>
         </Switch>
       </main>
