@@ -2,6 +2,7 @@ import express from "express";
 import { createServer } from "http";
 import path from "path";
 import fs from "fs";
+import { registerRoutes } from "./routes";
 
 const app = express();
 const server = createServer(app);
@@ -26,8 +27,7 @@ if (fs.existsSync(dist)) {
   app.use(express.static(dist));
 }
 
-// API routes - inline, no dynamic import
-import { registerRoutes } from "./routes";
+// API routes
 registerRoutes(server, app);
 
 // SPA fallback for non-root paths
