@@ -10,6 +10,15 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
+  // Health check endpoint - must respond immediately for autoscale deployments
+  app.get("/health", (_req, res) => {
+    res.status(200).send("OK");
+  });
+
+  app.get("/__health", (_req, res) => {
+    res.status(200).json({ status: "healthy" });
+  });
+
   // Categories endpoints (no auth required, shared across users)
   app.get("/api/categories", async (req, res) => {
     try {
