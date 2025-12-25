@@ -16,7 +16,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut, Settings } from "lucide-react";
 import { Link } from "wouter";
-import caimanLogo from "@assets/Caiman_Post_1766508805306.png";
+import caimanLogo from "@assets/caiman_Pos_1766705631360.png";
 import {
   openDB,
   getProducts,

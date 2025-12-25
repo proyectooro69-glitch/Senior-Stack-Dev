@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Loader2, Lock, Mail } from 'lucide-react';
-import caimanLogo from '@assets/Caiman_Post_1766508805306.png';
+import caimanLogo from '@assets/caiman_Pos_1766705631360.png';
 
 const loginSchema = z.object({
   email: z.string().email('Correo electrónico inválido'),
