@@ -7,21 +7,23 @@ import { registerRoutes } from "./routes";
 const app = express();
 const httpServer = createServer(app);
 const port = parseInt(process.env.PORT || "5000", 10);
+
 const distPath = path.resolve(process.cwd(), "dist", "public");
 const indexPath = path.resolve(distPath, "index.html");
+let staticReady = fs.existsSync(indexPath);
 
-// FIRST: Root endpoint for health checks - MUST respond with content
+// Health endpoints - always fast
+app.get("/health", (_req, res) => res.status(200).send("OK"));
+app.get("/__health", (_req, res) => res.status(200).json({ status: "healthy" }));
+
+// Root endpoint - serve app if ready, otherwise simple OK for health check
 app.get("/", (_req, res) => {
-  if (fs.existsSync(indexPath)) {
+  if (staticReady) {
     res.sendFile(indexPath);
   } else {
     res.status(200).send("OK");
   }
 });
-
-// Health check endpoints
-app.get("/health", (_req, res) => res.status(200).send("OK"));
-app.get("/__health", (_req, res) => res.status(200).json({ status: "healthy" }));
 
 // Body parsing
 app.use(express.json());
@@ -35,14 +37,13 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(err.status || 500).json({ message: err.message || "Error" });
 });
 
-// Static files for non-root paths
-if (fs.existsSync(distPath)) {
+// Static files
+if (staticReady) {
   app.use(express.static(distPath));
-  // Catch-all for SPA routing (except root which is handled above)
   app.use("*", (_req, res) => res.sendFile(indexPath));
 }
 
-// Start server and keep running
+// Start server
 httpServer.listen(port, "0.0.0.0", () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Server on port ${port}, static ready: ${staticReady}`);
 });
