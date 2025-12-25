@@ -7,44 +7,52 @@ const app = express();
 const server = createServer(app);
 const PORT = parseInt(process.env.PORT || "5000", 10);
 
-// ULTRA-FAST health check responses
-app.get("/", (_, res) => res.send("OK"));
+let ready = false;
+let indexHtml = "";
+
+// Pre-load index.html synchronously before starting
+const dist = path.resolve(process.cwd(), "dist", "public");
+const indexPath = path.resolve(dist, "index.html");
+if (fs.existsSync(indexPath)) {
+  indexHtml = fs.readFileSync(indexPath, "utf-8");
+}
+
+// Health check endpoints - always return 200
 app.get("/health", (_, res) => res.send("OK"));
 app.get("/__health", (_, res) => res.json({ status: "ok" }));
 
-// Start listening FIRST
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Listening on ${PORT}`);
-  loadApp();
+// Body parsing
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Static files
+if (fs.existsSync(dist)) {
+  app.use(express.static(dist));
+}
+
+// Single "/" handler - returns cached HTML immediately
+app.get("/", (_, res) => {
+  res.type("html").send(indexHtml || "OK");
 });
 
-async function loadApp() {
-  try {
-    // Body parsing
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: false }));
+// SPA fallback
+app.use("*", (_, res) => {
+  res.type("html").send(indexHtml || "Not Found");
+});
 
-    // Load routes dynamically
+// Start listening
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server on port ${PORT}`);
+  loadRoutes();
+});
+
+async function loadRoutes() {
+  try {
     const { registerRoutes } = await import("./routes");
     await registerRoutes(server, app);
-
-    // Static files
-    const dist = path.resolve(process.cwd(), "dist", "public");
-    const index = path.resolve(dist, "index.html");
-    
-    if (fs.existsSync(dist)) {
-      app.use(express.static(dist));
-      
-      // Override "/" to serve the actual app
-      app._router.stack = app._router.stack.filter((r: any) => 
-        !(r.route && r.route.path === "/" && r.route.methods.get)
-      );
-      app.get("/", (_, res) => res.sendFile(index));
-      app.use("*", (_, res) => res.sendFile(index));
-      
-      console.log("App ready");
-    }
+    ready = true;
+    console.log("Routes loaded");
   } catch (e) {
-    console.error("Load error:", e);
+    console.error("Route load error:", e);
   }
 }
