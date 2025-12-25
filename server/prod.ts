@@ -1,112 +1,62 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { serveStatic } from "./static";
 import { createServer } from "http";
+import path from "path";
+import fs from "fs";
 
 const app = express();
 const httpServer = createServer(app);
-
-declare module "http" {
-  interface IncomingMessage {
-    rawBody: unknown;
-  }
-}
-
-export function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
-  console.log(`${formattedTime} [${source}] ${message}`);
-}
-
 const port = parseInt(process.env.PORT || "5000", 10);
 
-console.log("Starting production server...");
+// Health checks FIRST - immediate response
+app.get("/health", (_req, res) => res.status(200).send("OK"));
+app.get("/__health", (_req, res) => res.status(200).json({ status: "healthy" }));
 
-// CRITICAL: Health check endpoints registered IMMEDIATELY - no async
-let appReady = false;
-app.get("/health", (_req, res) => {
-  res.status(200).send("OK");
-});
-app.get("/__health", (_req, res) => {
-  res.status(200).json({ status: "healthy" });
-});
-// Root serves health check during startup, then passes to static files
-app.get("/", (req, res, next) => {
-  if (!appReady) {
-    res.status(200).send("<!DOCTYPE html><html><body>OK</body></html>");
-  } else {
-    next();
-  }
-});
-
-// CRITICAL: Start server IMMEDIATELY - before any async operations
+// Start listening IMMEDIATELY
 httpServer.listen(port, "0.0.0.0", () => {
-  log(`serving on port ${port}`);
+  console.log(`Server listening on port ${port}`);
+  
+  // Setup everything else AFTER server is listening
+  setupApp();
 });
 
-// Now do async setup in background
-(async () => {
+async function setupApp() {
   try {
-    // Body parsing middleware
-    app.use(
-      express.json({
-        verify: (req, _res, buf) => {
-          req.rawBody = buf;
-        },
-      }),
-    );
+    // Body parsing
+    app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
 
-    // Logging middleware
-    app.use((req, res, next) => {
-      const start = Date.now();
-      const reqPath = req.path;
-      let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-      const originalResJson = res.json;
-      res.json = function (bodyJson, ...args) {
-        capturedJsonResponse = bodyJson;
-        return originalResJson.apply(res, [bodyJson, ...args]);
-      };
-
-      res.on("finish", () => {
-        const duration = Date.now() - start;
-        if (reqPath.startsWith("/api")) {
-          let logLine = `${req.method} ${reqPath} ${res.statusCode} in ${duration}ms`;
-          if (capturedJsonResponse) {
-            logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-          }
-          log(logLine);
-        }
-      });
-
-      next();
-    });
-
-    // Register API routes
+    // Dynamic import to avoid blocking startup
+    const { registerRoutes } = await import("./routes");
     await registerRoutes(httpServer, app);
 
-    // Error handling middleware
+    // Error handling
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      res.status(status).json({ message });
-      console.error("Error:", err);
+      res.status(err.status || 500).json({ message: err.message || "Internal Server Error" });
     });
 
-    // Serve static files (includes fallback to index.html)
-    serveStatic(app);
-
-    // Mark app as ready - "/" will now serve static files
-    appReady = true;
-    log("All routes and middleware registered - app ready");
+    // Static files
+    const distPath = path.resolve(process.cwd(), "dist", "public");
+    if (fs.existsSync(distPath)) {
+      console.log(`Serving static from: ${distPath}`);
+      
+      app.use((_req, res, next) => {
+        res.setHeader(
+          "Content-Security-Policy",
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'self';"
+        );
+        next();
+      });
+      
+      app.use(express.static(distPath));
+      app.use("*", (_req, res) => {
+        res.sendFile(path.resolve(distPath, "index.html"));
+      });
+      
+      console.log("App fully initialized");
+    } else {
+      console.error("Static files not found at:", distPath);
+    }
   } catch (error) {
-    console.error("Failed to register routes:", error);
-    process.exit(1);
+    console.error("Setup error:", error);
   }
-})();
+}
