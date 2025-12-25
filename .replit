@@ -9,12 +9,8 @@ channel = "stable-24_05"
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 5001
-externalPort = 3001
-
 [deployment]
-deploymentTarget = "reserved-vm"
+deploymentTarget = "autoscale"'
 run = ["node", "./dist/index.cjs"]
 build = ["npm", "run", "build"]
 
