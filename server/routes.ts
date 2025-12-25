@@ -264,20 +264,7 @@ export async function registerRoutes(
 
   // Check if current user is admin
   app.get("/api/admin/check", authMiddleware, async (req: AuthenticatedRequest, res) => {
-    try {
-      const { supabase } = await import('./storage');
-      const { data: { user }, error } = await supabase.auth.getUser(
-        req.headers.authorization?.substring(7) || ''
-      );
-      
-      if (error || !user) {
-        return res.json({ isAdmin: false });
-      }
-      
-      res.json({ isAdmin: user.email === ADMIN_EMAIL });
-    } catch (error) {
-      res.json({ isAdmin: false });
-    }
+    res.json({ isAdmin: req.userEmail === ADMIN_EMAIL });
   });
 
   return httpServer;

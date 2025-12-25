@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
+  userEmail?: string;
 }
 
 export async function authMiddleware(
@@ -26,6 +27,7 @@ export async function authMiddleware(
     }
     
     req.userId = user.id;
+    req.userEmail = user.email;
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Authentication failed' });
