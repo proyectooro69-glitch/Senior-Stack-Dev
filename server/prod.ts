@@ -1,49 +1,50 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express from "express";
 import { createServer } from "http";
 import path from "path";
 import fs from "fs";
-import { registerRoutes } from "./routes";
 
 const app = express();
-const httpServer = createServer(app);
-const port = parseInt(process.env.PORT || "5000", 10);
+const server = createServer(app);
+const PORT = parseInt(process.env.PORT || "5000", 10);
 
-const distPath = path.resolve(process.cwd(), "dist", "public");
-const indexPath = path.resolve(distPath, "index.html");
-let staticReady = fs.existsSync(indexPath);
+// ULTRA-FAST health check responses
+app.get("/", (_, res) => res.send("OK"));
+app.get("/health", (_, res) => res.send("OK"));
+app.get("/__health", (_, res) => res.json({ status: "ok" }));
 
-// Health endpoints - always fast
-app.get("/health", (_req, res) => res.status(200).send("OK"));
-app.get("/__health", (_req, res) => res.status(200).json({ status: "healthy" }));
+// Start listening FIRST
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Listening on ${PORT}`);
+  loadApp();
+});
 
-// Root endpoint - serve app if ready, otherwise simple OK for health check
-app.get("/", (_req, res) => {
-  if (staticReady) {
-    res.sendFile(indexPath);
-  } else {
-    res.status(200).send("OK");
+async function loadApp() {
+  try {
+    // Body parsing
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: false }));
+
+    // Load routes dynamically
+    const { registerRoutes } = await import("./routes");
+    await registerRoutes(server, app);
+
+    // Static files
+    const dist = path.resolve(process.cwd(), "dist", "public");
+    const index = path.resolve(dist, "index.html");
+    
+    if (fs.existsSync(dist)) {
+      app.use(express.static(dist));
+      
+      // Override "/" to serve the actual app
+      app._router.stack = app._router.stack.filter((r: any) => 
+        !(r.route && r.route.path === "/" && r.route.methods.get)
+      );
+      app.get("/", (_, res) => res.sendFile(index));
+      app.use("*", (_, res) => res.sendFile(index));
+      
+      console.log("App ready");
+    }
+  } catch (e) {
+    console.error("Load error:", e);
   }
-});
-
-// Body parsing
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-// API routes
-registerRoutes(httpServer, app);
-
-// Error handler
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  res.status(err.status || 500).json({ message: err.message || "Error" });
-});
-
-// Static files
-if (staticReady) {
-  app.use(express.static(distPath));
-  app.use("*", (_req, res) => res.sendFile(indexPath));
 }
-
-// Start server
-httpServer.listen(port, "0.0.0.0", () => {
-  console.log(`Server on port ${port}, static ready: ${staticReady}`);
-});
