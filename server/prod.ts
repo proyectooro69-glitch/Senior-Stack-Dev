@@ -7,19 +7,14 @@ const app = express();
 const server = createServer(app);
 const PORT = parseInt(process.env.PORT || "5000", 10);
 
-let ready = false;
-let indexHtml = "";
-
-// Pre-load index.html synchronously before starting
+// Pre-load index.html synchronously
 const dist = path.resolve(process.cwd(), "dist", "public");
 const indexPath = path.resolve(dist, "index.html");
-if (fs.existsSync(indexPath)) {
-  indexHtml = fs.readFileSync(indexPath, "utf-8");
-}
+const indexHtml = fs.existsSync(indexPath) ? fs.readFileSync(indexPath, "utf-8") : "<!DOCTYPE html><html><body>Loading...</body></html>";
 
-// Health check endpoints - always return 200
-app.get("/health", (_, res) => res.send("OK"));
-app.get("/__health", (_, res) => res.json({ status: "ok" }));
+// Health checks FIRST
+app.get("/health", (_, res) => res.status(200).send("OK"));
+app.get("/__health", (_, res) => res.status(200).json({ status: "ok" }));
 
 // Body parsing
 app.use(express.json());
@@ -30,29 +25,16 @@ if (fs.existsSync(dist)) {
   app.use(express.static(dist));
 }
 
-// Single "/" handler - returns cached HTML immediately
-app.get("/", (_, res) => {
-  res.type("html").send(indexHtml || "OK");
+// API routes - inline, no dynamic import
+import { registerRoutes } from "./routes";
+registerRoutes(server, app);
+
+// SPA routes
+app.get("*", (_, res) => {
+  res.type("html").send(indexHtml);
 });
 
-// SPA fallback
-app.use("*", (_, res) => {
-  res.type("html").send(indexHtml || "Not Found");
-});
-
-// Start listening
+// Start server
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server on port ${PORT}`);
-  loadRoutes();
+  console.log(`Server running on port ${PORT}`);
 });
-
-async function loadRoutes() {
-  try {
-    const { registerRoutes } = await import("./routes");
-    await registerRoutes(server, app);
-    ready = true;
-    console.log("Routes loaded");
-  } catch (e) {
-    console.error("Route load error:", e);
-  }
-}
