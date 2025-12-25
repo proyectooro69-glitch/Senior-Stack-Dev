@@ -182,6 +182,26 @@ export function initSyncService() {
     isOnline = false;
     syncStatusCallback?.('offline');
   });
+
+  // Listen for service worker sync messages
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'SYNC_REQUESTED') {
+        syncToServer().catch(console.error);
+      }
+    });
+  }
+
+  // Periodic sync check every 30 seconds when online
+  setInterval(() => {
+    if (isOnline && !syncInProgress) {
+      getPendingSync().then((pending) => {
+        if (pending.length > 0) {
+          syncToServer().catch(console.error);
+        }
+      }).catch(console.error);
+    }
+  }, 30000);
 }
 
 // Manual sync trigger

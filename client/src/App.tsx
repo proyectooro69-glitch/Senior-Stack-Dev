@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SplashScreen } from "@/components/SplashScreen";
 import { SyncStatus } from "@/components/SyncStatus";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { InventoryPage } from "@/pages/Inventory";
 import { POSPage } from "@/pages/POS";
 import { ReportsPage } from "@/pages/Reports";
@@ -275,6 +276,7 @@ function AuthenticatedApp() {
       </main>
 
       <BottomNavigation />
+      <InstallPrompt />
     </div>
   );
 }

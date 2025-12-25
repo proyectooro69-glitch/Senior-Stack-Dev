@@ -1,26 +1,41 @@
 {
   "name": "Caiman-POS - Inventario y Ventas",
   "short_name": "Caiman-POS",
-  "description": "Tu inventario siempre disponible. App de inventario y ventas offline-first para pequeños comercios.",
+  "description": "Tu inventario siempre disponible. App de inventario y ventas offline-first para pequenos comercios.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#064e3b",
+  "background_color": "#000000",
   "theme_color": "#10B981",
   "orientation": "portrait-primary",
+  "scope": "/",
   "icons": [
     {
-      "src": "/favicon.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/favicon.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["business", "productivity"],
-  "lang": "es"
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "es",
+  "dir": "ltr",
+  "prefer_related_applications": false
 }
