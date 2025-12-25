@@ -280,8 +280,6 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createSale(insertSale: InsertSale, userId?: string): Promise<Sale> {
-    const id = randomUUID();
-    
     // Convert productId to number if it's a valid integer, otherwise null
     // Supabase ventas table expects bigint for product_id
     let productIdNum: number | null = null;
@@ -292,10 +290,10 @@ export class SupabaseStorage implements IStorage {
       }
     }
     
+    // Let Supabase auto-generate the id (bigint)
     const { data, error } = await supabase
       .from('ventas')
       .insert({
-        id,
         product_id: productIdNum,
         product_name: insertSale.productName,
         quantity: insertSale.quantity,
