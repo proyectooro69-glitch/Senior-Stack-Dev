@@ -6,6 +6,14 @@ import { createServer } from "http";
 const app = express();
 const httpServer = createServer(app);
 
+// Health check MUST be registered before any middleware to respond instantly
+app.get("/health", (_req, res) => {
+  res.status(200).send("OK");
+});
+app.get("/__health", (_req, res) => {
+  res.status(200).json({ status: "healthy" });
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
